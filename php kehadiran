@@ -1,36 +1,40 @@
 <?php
+require __DIR__ . '/vendor/autoload.php'; // Include the autoloader from the Google API Client Library
 include 'config1.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Retrieve form data
-    $nama = $_POST["nama"];
-    $daerah = $_POST["daerah"];
-    $no_telefon = $_POST["no_telefon"];
-    $dari_mana = $_POST["dari_mana"];
-    $email = $_POST["email"];
-    $mukim = $_POST["mukim"];
-    $alamat = $_POST["alamat"];
-    $negeri = $_POST["negeri"];
+    // Your existing code here...
 
-    // Check connection
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
+    // Connect to Google Sheets API
+    $client = new Google_Client();
+    $client->setApplicationName('kehadiran');
+    $client->setDeveloperKey('AIzaSyCurYijbFJ7ytN3qFpxf90COUIYJXMul8Q'); // Replace with your actual API key
+    $client->setScopes([Google_Service_Sheets::SPREADSHEETS]);
+    $sheetsService = new Google_Service_Sheets($client);
+    $spreadsheetId = '15lGgRd3BRda7iBIibPmj9SzynV6NYSrTETmfKiyx4TY'; // Replace with your actual Google Sheets spreadsheet ID
 
-    // Use prepared statements to prevent SQL injection
-    $sql = "INSERT INTO kehadiran (nama, daerah, no_telefon, dari_mana, email, mukim, alamat, negeri) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssssssss", $nama, $daerah, $no_telefon, $dari_mana, $email, $mukim, $alamat, $negeri);
+    // Prepare the data for Google Sheets
+    $values = [
+        [$nama, $daerah, $no_telefon, $dari_mana, $email, $mukim, $alamat, $negeri]
+    ];
 
-    if ($stmt->execute()) {
-        echo "Data inserted successfully";
+    // Specify the sheet name
+    $sheetName = 'DATA LENGKAP MC'; // Replace with your actual sheet name
 
-        // Append data to CSV file
-        $csvData = "$nama,$daerah,$no_telefon,$dari_mana,$email,$mukim,$alamat,$negeri\n";
-        file_put_contents('form_data.csv', $csvData, FILE_APPEND);
+    // Append the data to the sheet
+    $range = $sheetName . 'DATA LENGKAP';
+    $body = new Google_Service_Sheets_ValueRange(['values' => $values]);
+    $params = ['valueInputOption' => 'RAW'];
+    $result = $sheetsService->spreadsheets_values->append($spreadsheetId, $range, $body, $params);
+
+    // Check if data is successfully appended
+    if ($result->updates->updatedRows > 0) {
+        echo "Data inserted successfully into Google Sheets";
     } else {
-        echo "Error: " . $sql . "<br>" . $stmt->error;
+        echo "Error inserting data into Google Sheets";
     }
+
+    // Your existing code to append data to CSV file...
 
     // Close the prepared statement
     $stmt->close();
