@@ -1,0 +1,41 @@
+<?php
+include 'config1.php';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Retrieve form data
+    $nama = $_POST["nama"];
+    $daerah = $_POST["daerah"];
+    $no_telefon = $_POST["no_telefon"];
+    $dari_mana = $_POST["dari_mana"];
+    $email = $_POST["email"];
+    $mukim = $_POST["mukim"];
+    $alamat = $_POST["alamat"];
+    $negeri = $_POST["negeri"];
+
+    // Check connection
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+
+    // Use prepared statements to prevent SQL injection
+    $sql = "INSERT INTO kehadiran (nama, daerah, no_telefon, dari_mana, email, mukim, alamat, negeri) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssssss", $nama, $daerah, $no_telefon, $dari_mana, $email, $mukim, $alamat, $negeri);
+
+    if ($stmt->execute()) {
+        echo "Data inserted successfully";
+
+        // Append data to CSV file
+        $csvData = "$nama,$daerah,$no_telefon,$dari_mana,$email,$mukim,$alamat,$negeri\n";
+        file_put_contents('form_data.csv', $csvData, FILE_APPEND);
+    } else {
+        echo "Error: " . $sql . "<br>" . $stmt->error;
+    }
+
+    // Close the prepared statement
+    $stmt->close();
+
+    // Close the database connection
+    $conn->close();
+}
+?>
